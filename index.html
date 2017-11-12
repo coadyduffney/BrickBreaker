@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <title>Brick Breaker</title>
+    <style>
+        * { padding: 0; margin: 0; }
+        canvas {background: #000000; display: block; margin: 0 auto; }
+        .jumbotron {text-align: center; color: #0095DD; background-color: #252525;}
+        #welcome {color: #0095DD; margin: auto; width: 70%;}
+        p {font-size: 16px;}
+        body {background-color: #252525;}
+
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="jumbotron">
+        <h1>Brick Breaker</h1>
+        <div id="game">
+            <canvas id="myCanvas" width="480" height="320"> </canvas><br />
+            <button type="button" class="btn btn-primary" onclick="startGame()" >Start Game</button>
+        </div>
+    </div><!-- end jumbotron -->
+    <div id="welcome">
+        <h1><u>Welcome!</u></h1>
+        <p>Welcome to my 2D Brick Breaker Game!<br /> The aim of the game is to destroy all bricks on the screen. Destroy each brick by hitting it with the ball.</p>
+        <p>To start the game, click on the start button above. Each game will start with 3 lives (displayed in the top right corner) and automatically restart when you lose one. When all lives are lost, the game will end.</p>
+        <p>When you click start game, you will be asked to choose a difficulty, <strong>easy, medium, or hard.</strong> The ball will move much faster depending on the difficulty you choose. Good Luck! :)</p>
+
+        <h3>Paddle Controls</h3>
+        <p>To move the paddle, you can do so by simply using your <strong>mouse cursor</strong>, or by using the <span class="glyphicon glyphicon-arrow-left"></span> and <span class="glyphicon glyphicon-arrow-right"></span> <strong>arrow keys</strong>.</p>
+
+    </div>
+</div>
+
+
+<script type="text/javascript">
+
+var canvas=document.getElementById("myCanvas");
+var ctx = canvas.getContext("2d");
+var ballRadius=10;
+
+
+var x=canvas.width/2;
+var y=canvas.height-30;
+var dx=2;
+var dy=-2;
+var paddleHeight=10;
+var paddleWidth=75;
+var paddleX=(canvas.width-paddleWidth)/2;
+var rightPressed= false;
+var leftPressed=false;
+var brickRowCount = 3;
+var brickColumnCount = 5;
+var brickWidth = 75;
+var brickHeight = 20;
+var brickPadding = 10;
+var brickOffsetTop = 30;
+var brickOffsetLeft = 30;
+var score = 0;
+var lives = 3;
+document.addEventListener("keydown",keyDownHandler,false);
+document.addEventListener("keyup",keyUpHandler,false);
+document.addEventListener("mousemove", mouseMoveHandler, false);
+
+//initialize array of bricks
+var bricks = [];
+for(c=0; c<brickColumnCount; c++) {
+    bricks[c] = [];
+    for(r=0; r<brickRowCount; r++) {
+         bricks[c][r] = { x: 0, y: 0, status: 1 };
+    }
+}
+
+
+function mouseMoveHandler(e) {
+    var relativeX = e.clientX - canvas.offsetLeft;
+    if(relativeX > 0 && relativeX < canvas.width) {
+        paddleX = relativeX - paddleWidth/2;
+    }
+}
+
+function keyDownHandler(e){
+    if(e.keyCode==39) {
+        rightPressed=true;
+    }
+    else if(e.keyCode==37) {
+        leftPressed=true;
+    }
+}
+
+function keyUpHandler(e){
+    if(e.keyCode==39){
+        rightPressed=false;
+    }
+    else if(e.keyCode==37){
+        leftPressed=false;
+        }
+}
+
+function drawLives() {
+    ctx.font = "16px Arial";
+    ctx.fillStyle = "#0095DD";
+    ctx.fillText("Lives: " +lives, canvas.width-65, 20);
+}
+
+function drawBall(){
+    ctx.beginPath();
+    ctx.arc(x,y,ballRadius,0,2*Math.PI);
+    ctx.fillstyle="#0033FF";
+    ctx.fillStroke="#0033FF";
+    ctx.Stroke="10"
+    ctx.fill();
+    ctx.closePath();
+}
+
+function drawPaddle(){
+    ctx.beginPath();
+    ctx.rect(paddleX,canvas.height-paddleHeight,paddleWidth,paddleHeight);
+    ctx.fillstyle="#0095DD";
+    ctx.fill();
+    ctx.closePath();
+}
+
+function drawBricks() {
+    for(c=0; c<brickColumnCount; c++) {
+        for(r=0; r<brickRowCount; r++) {
+            if(bricks[c][r].status == 1) {
+                var brickX = (c*(brickWidth+brickPadding))+brickOffsetLeft;
+                var brickY = (r*(brickHeight+brickPadding))+brickOffsetTop;
+                bricks[c][r].x = brickX;
+                bricks[c][r].y = brickY;
+                ctx.beginPath();
+                ctx.rect(brickX, brickY, brickWidth, brickHeight);
+                ctx.fillStyle = "#0095DD";
+                ctx.fill();
+                ctx.closePath();
+            }
+        }
+    }
+}
+
+function collisionDetection() {
+    for(c=0; c<brickColumnCount; c++) {
+        for(r=0; r<brickRowCount; r++) {
+            var b = bricks[c][r];
+            if(b.status == 1) {
+                if(x > b.x && x < b.x+brickWidth && y > b.y && y < b.y+brickHeight) {
+                    dy = -dy;
+                    b.status = 0;
+                    score++;
+                    if(score == brickRowCount*brickColumnCount) {
+                        alert("LEVEL COMPLETE! YOU WIN!");
+                        document.location.reload();
+                    }
+                }
+            }
+        }
+    }
+}
+
+function drawScore() {
+    ctx.font = "16px Arial";
+    ctx.fillStyle = "#0095DD";
+    ctx.fillText("Score: "+score, 8, 20);
+}
+
+function draw(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    drawBricks();
+    drawBall();
+    drawPaddle();
+    drawScore();
+    drawLives();
+    collisionDetection();
+
+    // Detection for left & right walls
+    if(x + dx > canvas.width-ballRadius || x + dx < ballRadius) {
+        dx = -dx;
+    }
+
+    if(y + dy < ballRadius) {
+        dy = -dy;
+    }
+
+    // Detection for top, bottom & paddle.
+    else if(y + dy > canvas.height-ballRadius) {
+        if(x > paddleX && x < paddleX + paddleWidth) {
+            if(y= y-paddleHeight){
+                dy = -dy  ;
+            }
+        }
+        else {
+            lives--;
+            if(!lives) {
+                alert("Game Over! You've run out of lives!");
+                document.location.reload();
+            }
+            else {  //resets the poistion of the ball & paddle, and movement of the ball until lives = 0
+                x = canvas.width/2;
+                y = canvas.height-30;
+                dx = 2;
+                dy = -2;
+                paddleX = (canvas.width-paddleWidth)/2;
+            }
+        }
+    }
+
+    if(rightPressed && paddleX<canvas.width-paddleWidth){
+        paddleX+=7;
+    }
+    else if(leftPressed && paddleX>0 ){
+        paddleX-=7;
+    }
+
+    x=x+dx;
+    y=y+dy;
+
+    //requestAnimationFrame(draw);
+}
+
+
+function startGame() {
+    var difficulty = prompt("Please enter a difficulty.\nType easy, medium, or hard.");
+
+    if (difficulty == "easy") {
+        setInterval(draw, 15);
+    }
+    else if (difficulty == "medium") {
+        setInterval(draw, 10);
+    }
+    else if (difficulty == "hard") {
+        setInterval(draw, 7);
+    }
+    else {
+        setInterval(draw, 15);
+    }
+
+}
+
+
+</script>
+</body>
+</html>
